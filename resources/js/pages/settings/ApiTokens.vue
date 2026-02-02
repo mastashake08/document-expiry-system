@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { destroy } from '@/routes/settings/api_tokens';
+import { destroy } from '@/routes/api-tokens';
 
 interface Token {
     id: number;
