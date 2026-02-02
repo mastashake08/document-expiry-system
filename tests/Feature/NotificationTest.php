@@ -82,18 +82,18 @@ test('send expiry notifications command processes expiring uploads', function ()
     $file = UploadedFile::fake()->create('test.pdf', 100);
     $path = $file->store('uploads');
     
-    // Upload expiring in 5 days
+    // Upload expiring in 25 days
     Upload::create([
         'document_id' => $document->id,
         'file_path' => $path,
-        'exp_date' => now()->addDays(5),
+        'exp_date' => now()->addDays(25),
     ]);
     
-    // Upload expiring in 10 days (outside default 7-day window)
+    // Upload expiring in 35 days (outside default 30-day window)
     Upload::create([
         'document_id' => $document->id,
         'file_path' => $path,
-        'exp_date' => now()->addDays(10),
+        'exp_date' => now()->addDays(35),
     ]);
     
     Notification::fake();
@@ -120,17 +120,17 @@ test('send expiry notifications command respects custom days option', function (
     $file = UploadedFile::fake()->create('test.pdf', 100);
     $path = $file->store('uploads');
     
-    // Upload expiring in 10 days
+    // Upload expiring in 40 days
     Upload::create([
         'document_id' => $document->id,
         'file_path' => $path,
-        'exp_date' => now()->addDays(10),
+        'exp_date' => now()->addDays(40),
     ]);
     
     Notification::fake();
     
-    // Should send with 14-day window
-    $this->artisan('documents:send-expiry-notifications --days=14')
+    // Should send with 45-day window
+    $this->artisan('documents:send-expiry-notifications --days=45')
         ->expectsOutput('Sent 1 notifications.')
         ->assertSuccessful();
     

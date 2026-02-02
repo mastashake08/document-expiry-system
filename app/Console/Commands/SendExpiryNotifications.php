@@ -13,7 +13,7 @@ class SendExpiryNotifications extends Command
      *
      * @var string
      */
-    protected $signature = 'documents:send-expiry-notifications {--days=7 : Number of days before expiration to send notifications}';
+    protected $signature = 'documents:send-expiry-notifications {--days=30 : Number of days before expiration to send notifications}';
 
     /**
      * The console command description.
