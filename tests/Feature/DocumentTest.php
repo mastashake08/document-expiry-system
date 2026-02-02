@@ -205,3 +205,74 @@ test('can delete document via web', function () {
 
     $this->assertDatabaseMissing('documents', ['id' => $document->id]);
 });
+
+test('can create document with first upload', function () {
+    $user = User::factory()->create();
+    $client = Client::factory()->create();
+    
+    \Illuminate\Support\Facades\Storage::fake('local');
+    
+    $file = \Illuminate\Http\UploadedFile::fake()->create('document.pdf', 1024);
+    $expDate = now()->addMonths(6)->format('Y-m-d');
+
+    $response = $this->actingAs($user)
+        ->post(route('documents.store'), [
+            'client_id' => $client->id,
+            'name' => 'Document with Upload',
+            'file' => $file,
+            'exp_date' => $expDate,
+        ]);
+
+    $response->assertRedirect(route('documents.index'));
+
+    $this->assertDatabaseHas('documents', [
+        'name' => 'Document with Upload',
+        'client_id' => $client->id,
+    ]);
+    
+    $document = Document::where('name', 'Document with Upload')->first();
+    
+    $this->assertDatabaseHas('uploads', [
+        'document_id' => $document->id,
+        'exp_date' => $expDate,
+    ]);
+    
+    \Illuminate\Support\Facades\Storage::disk('local')->assertExists($document->uploads->first()->file_path);
+});
+
+test('can create document without upload', function () {
+    $user = User::factory()->create();
+    $client = Client::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->post(route('documents.store'), [
+            'client_id' => $client->id,
+            'name' => 'Document without Upload',
+        ]);
+
+    $response->assertRedirect(route('documents.index'));
+
+    $document = Document::where('name', 'Document without Upload')->first();
+    
+    expect($document)->not->toBeNull();
+    expect($document->uploads)->toHaveCount(0);
+});
+
+test('requires expiration date when file is provided', function () {
+    $user = User::factory()->create();
+    $client = Client::factory()->create();
+    
+    \Illuminate\Support\Facades\Storage::fake('local');
+    
+    $file = \Illuminate\Http\UploadedFile::fake()->create('document.pdf', 1024);
+
+    $response = $this->actingAs($user)
+        ->post(route('documents.store'), [
+            'client_id' => $client->id,
+            'name' => 'Document with Upload',
+            'file' => $file,
+            // missing exp_date
+        ]);
+
+    $response->assertSessionHasErrors(['exp_date']);
+});

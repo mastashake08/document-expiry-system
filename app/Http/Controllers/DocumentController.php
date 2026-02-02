@@ -48,7 +48,13 @@ class DocumentController extends Controller
      */
     public function store(StoreDocumentRequest $request): RedirectResponse
     {
-        $this->documentService->create($request->validated());
+        $validated = $request->validated();
+        
+        $this->documentService->createWithUpload(
+            $validated,
+            $request->file('file'),
+            $validated['exp_date'] ?? null
+        );
 
         return to_route('documents.index');
     }

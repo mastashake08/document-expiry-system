@@ -34,6 +34,24 @@ class DocumentService
     }
 
     /**
+     * Create a new document with optional first upload.
+     */
+    public function createWithUpload(array $data, ?\Illuminate\Http\UploadedFile $file = null, ?string $expDate = null): Document
+    {
+        $document = Document::create([
+            'client_id' => $data['client_id'],
+            'name' => $data['name'],
+        ]);
+
+        if ($file && $expDate) {
+            $uploadService = app(UploadService::class);
+            $uploadService->create($document, $file, $expDate);
+        }
+
+        return $document->load('uploads');
+    }
+
+    /**
      * Find a document by ID.
      */
     public function find(int $id): ?Document

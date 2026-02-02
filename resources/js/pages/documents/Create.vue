@@ -50,7 +50,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                 description="Add a new document for a client"
             />
 
-            <Form v-bind="DocumentController.store.form()" class="space-y-6">
+            <Form v-bind="DocumentController.store.form()" class="space-y-6" enctype="multipart/form-data">
                 <div class="space-y-2">
                     <Label for="client_id" required>Client</Label>
                     <Select name="client_id" required>
@@ -80,6 +80,34 @@ const breadcrumbItems: BreadcrumbItem[] = [
                         autofocus
                     />
                     <InputError name="name" />
+                </div>
+
+                <div class="rounded-lg border border-gray-200 p-4 space-y-4 dark:border-gray-800">
+                    <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">First Upload (Optional)</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Add the first version of this document now, or add it later.</p>
+                    
+                    <div class="space-y-2">
+                        <Label for="file">File</Label>
+                        <Input
+                            id="file"
+                            name="file"
+                            type="file"
+                        />
+                        <InputError name="file" />
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Maximum file size: 10MB</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="exp_date">Expiration Date</Label>
+                        <Input
+                            id="exp_date"
+                            name="exp_date"
+                            type="date"
+                            :min="new Date().toISOString().split('T')[0]"
+                        />
+                        <InputError name="exp_date" />
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Required if file is provided</p>
+                    </div>
                 </div>
 
                 <div class="flex items-center gap-4">

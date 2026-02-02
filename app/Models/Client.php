@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 
 class Client extends Model
 {
     /** @use HasFactory<\Database\Factories\ClientFactory> */
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -31,6 +32,14 @@ class Client extends Model
     protected function casts(): array
     {
         return [];
+    }
+
+    /**
+     * Route notifications for the Twilio channel.
+     */
+    public function routeNotificationForTwilio(): ?string
+    {
+        return $this->phone_number;
     }
 
     /**

@@ -24,6 +24,8 @@ class StoreDocumentRequest extends FormRequest
         return [
             'client_id' => ['required', 'exists:clients,id'],
             'name' => ['required', 'string', 'max:255'],
+            'file' => ['nullable', 'file', 'max:10240'], // 10MB max, optional for first upload
+            'exp_date' => ['nullable', 'required_with:file', 'date', 'after_or_equal:today'],
         ];
     }
 }
