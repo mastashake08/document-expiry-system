@@ -9,6 +9,7 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
+import { index as apiTokens } from '@/routes/settings/api_tokens';
 import { type NavItem } from '@/types';
 
 const sidebarNavItems: NavItem[] = [
@@ -23,6 +24,10 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Two-Factor Auth',
         href: show(),
+    },
+    {
+        title: 'API Tokens',
+        href: apiTokens(),
     },
     {
         title: 'Appearance',
