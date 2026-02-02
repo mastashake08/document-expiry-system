@@ -1,0 +1,9 @@
+# PWA Icon Placeholder
+# Generate actual PNG icons at:
+# - /public/pwa-192x192.png (192x192)
+# - /public/pwa-512x512.png (512x512)
+#
+# You can use a tool like:
+# - https://www.pwabuilder.com/imageGenerator
+# - https://realfavicongenerator.net/
+# - Or create them manually with any image editor
