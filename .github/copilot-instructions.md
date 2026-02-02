@@ -3,14 +3,18 @@
 ## Project Overview
 Laravel 12 + Vue 3 + Inertia.js application for managing documents with expiration dates. Users upload documents with metadata (notes, expiration_date, owner contact info) and receive SMS/email notifications when documents near expiration.
 
+**Architecture Philosophy**: API-driven with TDD practices and Service/Action pattern for business logic.
+
 ## Tech Stack Architecture
 
 ### Backend (Laravel 12)
 - **PHP 8.2+** with Laravel 12 framework
 - **Fortify** for authentication (login, register, password reset, 2FA)
-- **Inertia.js** server adapter - all routes return Inertia responses (`Inertia::render()`)
+- **Sanctum** for API token authentication (`auth:sanctum` middleware)
+- **Inertia.js** server adapter for web routes - returns Inertia responses (`Inertia::render()`)
 - **Testing**: Pest (preferred), not PHPUnit - see `tests/Pest.php` for configuration
 - **Code style**: Laravel Pint (PSR-12 based) - run `composer lint` to fix
+- **TDD Approach**: Write tests first in `tests/Feature/` and `tests/Unit/`, use `RefreshDatabase` trait
 
 ### Frontend (Vue 3 + TypeScript)
 - **Vue 3** with Composition API and TypeScript
@@ -48,17 +52,108 @@ npm run lint         # Fix with ESLint
 ### Docker (Laravel Sail)
 Uses `compose.yaml` with PHP 8.5, MySQL 8.4. See `docker/` for custom images.
 
+## Test-Driven Development (TDD)
+
+### Testing Philosophy
+Write tests BEFORE implementing features. Tests live in `tests/`:
+- **Feature tests**: HTTP requests, full application flow (`tests/Feature/`)
+- **Unit tests**: Isolated business logic, services, actions (`tests/Unit/`)
+
+### Pest Test Structure
+Use Pest syntax (not PHPUnit classes):
+```php
+uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+
+test('profile information can be updated', function () {
+    $user = User::factory()->create();
+    
+    $response = $this->actingAs($user)
+        ->patch(route('profile.update'), [
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
+    
+    $response->assertSessionHasNoErrors()
+        ->assertRedirect(route('profile.edit'));
+    
+    $user->refresh();
+    expect($user->name)->toBe('Test User');
+});
+```
+
+### Test Organization
+- Group tests by feature: `tests/Feature/Auth/`, `tests/Feature/Settings/`
+- Use factories for test data: `User::factory()->create()`
+- Use `RefreshDatabase` trait to reset database between tests
+- Test both success and failure paths
+- API tests should check JSON structure and status codes
+
+### Running Tests
+```bash
+composer test        # Run all tests with Pint check
+php artisan test     # Run tests only
+php artisan test --filter=ProfileUpdateTest  # Run specific test
+```
+
 ## Project Structure Patterns
 
 ### Route Organization
-- **`routes/web.php`**: Public routes and dashboard
+- **`routes/api.php`**: RESTful API endpoints with Sanctum authentication
+- **`routes/web.php`**: Public routes and dashboard (Inertia pages)
 - **`routes/settings.php`**: User settings routes (profile, password, 2FA, appearance)
 - Auth routes handled by Fortify, views customized in `FortifyServiceProvider`
 
-### Controller Pattern
-Controllers in `app/Http/Controllers/Settings/` follow resource-like methods:
+**Web Controllers** (e.g., `app/Http/Controllers/Settings/`) return Inertia pages:
 - `edit()`: Return Inertia page with data
 - `update()`: Process form, validate via FormRequest, redirect
+- `destroy()`: Delete resource, use custom FormRequest for authorization
+
+Example: `ProfileController` uses `ProfileUpdateRequest` and `ProfileDeleteRequest`
+
+**API Controllers** return JSON responses, delegate business logic to Services/Actions:
+```php
+public function store(StoreDocumentRequest $request)
+{
+    $document = $this->documentService->create($request->validated());
+    return new DocumentResource($document);
+}
+```
+
+### Service/Action Layer Pattern
+Business logic belongs in `app/Actions/` or `app/Services/`, NOT controllers:
+
+**Actions**: Single-responsibility classes implementing Fortify contracts or specific operations
+- Location: `app/Actions/Fortify/` (e.g., `CreateNewUser`, `ResetUserPassword`)
+- Pattern: Implement contract interface, single public method
+- Example: `CreateNewUser` validates and creates users
+
+**Services**: When you add business logic, create service classes for complex operations:
+- Location: `app/Services/` (create this directory)
+- Pattern: Dependency injection in constructor, multiple related methods
+- Use for: Document management, notification sending, file processing
+- Example structure:
+```php
+class DocumentService
+{
+    public function create(array $data): Document { }
+    public function notifyExpiry(Document $document): void { }
+}
+```
+
+### Validation Pattern
+Use reusable traits for common validation rules:
+- `app/Concerns/PasswordValidationRules.php`: Password validation
+- `app/Concerns/ProfileValidationRules.php`: Name/email validation
+- Create similar traits for domain-specific validation (e.g., `DocumentValidationRules`)
+```
+Controllers should return JSON responses or use API Resources for structured output.
+
+### Controller Pattern
+Controllers in `app/Http/Controllers/Settings/` follow resource-like methods:
+- `laravel/sanctum`: API token authentication
+- `inertiajs/inertia-laravel`: Server-side adapter
+- `laravel/wayfinder`: Type-safe routing for frontend
+- `pestphp/pest`: Testing framework with Laravel plugin redirect
 - `destroy()`: Delete resource, use custom FormRequest for authorization
 
 Example: `ProfileController` uses `ProfileUpdateRequest` and `ProfileDeleteRequest`
@@ -66,18 +161,42 @@ Example: `ProfileController` uses `ProfileUpdateRequest` and `ProfileDeleteReque
 ### Inertia Page Components
 - **Location**: `resources/js/pages/`
 - **Naming**: PascalCase, match route path (e.g., `settings/Profile.vue` for `/settings/profile`)
-- **Props**: Typed via `defineProps<{ ... }>()`
-- **Forms**: Use Inertia form helpers for validation errors
+- **Props**: TypeAPI Resource (TDD Workflow)
+1. **Write test first** in `tests/Feature/`:
+   ```php
+   test('can create document', function () {
+       $user = User::factory()->create();
+       $response = $this->actingAs($user, 'sanctum')
+           ->postJson('/api/documents', ['title' => 'Test']);
+       $response->assertCreated();
+   });
+   ```
+2. Create migration: `php artisan make:migration create_documents_table`
+3. Create model with factory: `php artisan make:model Document -f`
+4. Create API controller: `php artisan make:controller Api/DocumentController --api`
+5. Create service in `app/Services/DocumentService.php` for business logic
+6. Create FormRequest: `php artisan make:request StoreDocumentRequest`
+7. Create API Resource: `php artisan make:resource DocumentResource`
+8. Add route to `routes/api.php` with `auth:sanctum` middleware
+9. Run test: `php artisan test --filter=DocumentTest`
+10. Implement controller method calling service
+11. Verify test passes
 
-### Vue Component Organization
-```
-resources/js/
-├── components/
-│   ├── ui/             # Reka UI wrappers (Button, Sheet, Dialog, etc.)
-│   ├── AppShell.vue    # Main layout with header/sidebar
-│   ├── AppHeader.vue   # Top navigation
-│   └── Nav*.vue        # Navigation components
-├── composables/
+### Adding a New Settings Page
+1. **Write test first** in `tests/Feature/Settings/`
+2. Create route in `routes/settings.php` with `auth` + `verified` middleware
+3. Create controller in `app/Http/Controllers/Settings/`
+4. Create FormRequest(s) for validation
+5. Create Vue page in `resources/js/pages/settings/`
+6. Add navigation link in `NavMain.vue` or relevant component
+7. Verify test passes
+
+### Adding Business Logic
+1. Create Action class in `app/Actions/` for single-purpose operations
+2. Create Service class in `app/Services/` for complex/multi-step operations
+3. Use dependency injection in constructors
+4. Write unit tests in `tests/Unit/` for complex logic
+5. Controllers should be thin - delegate to Actions/Servic
 │   ├── useAppearance.ts    # Dark/light theme management
 │   ├── useTwoFactorAuth.ts # 2FA setup logic
 │   └── useCurrentUrl.ts    # Route awareness
