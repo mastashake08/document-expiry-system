@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Client extends Model
+class Document extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClientFactory> */
+    /** @use HasFactory<\Database\Factories\DocumentFactory> */
     use HasFactory;
 
     /**
@@ -17,10 +18,8 @@ class Client extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'client_id',
         'name',
-        'email',
-        'phone_number',
-        'address',
     ];
 
     /**
@@ -34,10 +33,18 @@ class Client extends Model
     }
 
     /**
-     * Get the documents for the client.
+     * Get the client that owns the document.
      */
-    public function documents(): HasMany
+    public function client(): BelongsTo
     {
-        return $this->hasMany(Document::class);
+        return $this->belongsTo(Client::class);
+    }
+
+    /**
+     * Get the uploads for the document.
+     */
+    public function uploads(): HasMany
+    {
+        return $this->hasMany(Upload::class);
     }
 }
