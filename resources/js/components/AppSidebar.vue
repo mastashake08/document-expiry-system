@@ -16,6 +16,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as clients } from '@/routes/clients';
 import { index as documents } from '@/routes/documents';
+import { docs as apiDocs } from '@/routes/api';
 import { type NavItem } from '@/types';
 import AppLogo from './AppLogo.vue';
 
@@ -40,12 +41,12 @@ const mainNavItems: NavItem[] = [
 const footerNavItems: NavItem[] = [
     {
         title: 'Github Repo',
-        href: 'https://github.com/laravel/vue-starter-kit',
+        href: 'https://github.com/mastashake08/document-expiry-system',
         icon: Folder,
     },
     {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        title: 'API Documentation',
+        href: apiDocs(),
         icon: BookOpen,
     },
 ];

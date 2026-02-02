@@ -17,6 +17,10 @@ Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::get('api-docs', function () {
+    return Inertia::render('ApiDocs');
+})->middleware(['auth', 'verified'])->name('api.docs');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('clients', ClientController::class);
     Route::resource('documents', DocumentController::class);
